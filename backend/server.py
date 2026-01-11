@@ -1,5 +1,6 @@
 import os
 import json
+from pydoc import doc
 import tempfile
 import numpy as np
 import pytesseract
@@ -135,11 +136,21 @@ def create_embedding(text: str) -> np.ndarray:
 
 def load_job_database() -> List[dict]:
     """Load the job database with embeddings."""
-    if not os.path.exists(DATABASE_PATH):
-        raise HTTPException(status_code=500, detail=f"Database not found at {DATABASE_PATH}")
-    
-    with open(DATABASE_PATH, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    try:
+        jobs_ref=db.collection("resumes").stream()
+        jobs = []
+        for doc in jobs_ref:
+            data = doc.to_dict()
+            data["id"] = doc.id   # keep document ID
+            jobs.append(data)
+
+        if not jobs:
+            raise HTTPException(status_code=404, detail="No jobs found in Firestore")
+
+        return jobs
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Firestore error: {str(e)}")
 
 
 def rank_jobs_by_similarity(job_dict: dict, database: List[dict], top_k: int = 50) -> List[dict]:
