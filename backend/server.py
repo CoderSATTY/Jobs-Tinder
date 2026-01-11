@@ -8,10 +8,12 @@ from groq import Groq
 from google import genai
 from sklearn.metrics.pairwise import cosine_similarity
 from dotenv import load_dotenv
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import Depends, FastAPI, Header, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Any, Dict, List
+import firebase_admin
+from firebase_admin import credentials, firestore, auth
 
 # Load environment variables
 load_dotenv()
@@ -24,10 +26,14 @@ DATABASE_PATH = os.path.join(os.path.dirname(__file__), "data", "database_with_e
 
 app = FastAPI(title="Resume Parser & Job Recommendation API")
 
+cred = credentials.Certificate("C:\\Users\\ninad\\Downloads\\ppt-maker-7f813-firebase-adminsdk-fbsvc-facb0c310f.json")
+firebase_admin.initialize_app(cred)
+db=firestore.client()
+
 # Enable CORS for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:8080", "http://localhost:8081", "http://127.0.0.1:8080", "http://127.0.0.1:8081"],
+    allow_origins=["http://localhost:5173","http://localhost:3000", "http://127.0.0.1:5173", "http://localhost:8080", "http://localhost:8081", "http://127.0.0.1:8080", "http://127.0.0.1:8081"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -48,6 +54,25 @@ class RankedJob(BaseModel):
     description_snippet: str
     score: float
 
+def get_current_user(authorization: str = Header(...)):
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid auth header")
+
+    token = authorization.split(" ")[1]
+
+    try:
+        decoded_token = auth.verify_id_token(token)
+
+        # Return useful user info
+        return {
+            "uid": decoded_token.get("uid"),
+            "email": decoded_token.get("email"),
+            "name": decoded_token.get("name"),          # Google / provider name
+       
+        }
+
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 def extract_text_from_pdf(pdf_path: str) -> str:
     """Extract text from PDF using OCR."""
@@ -149,7 +174,7 @@ def rank_jobs_by_similarity(job_dict: dict, database: List[dict], top_k: int = 5
 
 
 @app.post("/parse-resume")
-async def parse_resume(file: UploadFile = File(...)):
+async def parse_resume(file: UploadFile = File(...),user: dict = Depends(get_current_user)):
     """
     Upload a resume PDF and get parsed info_dict and job_dict.
     """
@@ -177,6 +202,16 @@ async def parse_resume(file: UploadFile = File(...)):
         info_dict = parsed_data.get("info_dict", {})
         job_dict = parsed_data.get("job_dict", {})
         new_keys_tracker = parsed_data.get("new_keys_tracker", {})
+
+        db.collection("users").document(user["uid"]).set(
+            {
+                "info_dict": info_dict,
+                "job_dict": job_dict,
+                "dynamic_keys": new_keys_tracker,
+                "updated_at": firestore.SERVER_TIMESTAMP,
+            },
+            merge=True,
+        )
         
         return {
             "success": True,
@@ -218,7 +253,21 @@ async def save_profile(request: SaveProfileRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+@app.get("/me")
+async def get_my_profile(user: dict = Depends(get_current_user)):
+    doc = db.collection("users").document(user["uid"]).get()
+
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="User data not found")
+
+    return {
+        "success": True,
+        "data": doc.to_dict()
+    }
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy"}
+
