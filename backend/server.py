@@ -40,10 +40,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Pydantic models
-# class SaveProfileRequest(BaseModel):
-#     job_dict: Dict[str, Any]
-
 class RankedJob(BaseModel):
     id: str
     title: str
@@ -172,11 +168,7 @@ def rank_jobs_by_similarity(
     database: List[dict],
     top_k: int = 50,
 ) -> List[dict]:
-    """
-    Rank jobs by cosine similarity between resume(job_dict)
-    and job embeddings stored in DB.
-    """
-
+ 
     # 1️⃣ Embed the resume/job preference
     job_text = json.dumps(job_dict, sort_keys=True)
     query_embedding = create_embedding(job_text)
@@ -193,12 +185,12 @@ def rank_jobs_by_similarity(
 
         # 2️⃣ Build frontend-safe job object
         job_result = {
-            "id": item.get("job_id", ""),                 # 🔑 correct id
+            "id": item["id"],                 # 🔑 correct id
             "title": item.get("title", ""),
-            "company": item.get("company_name", item.get("via", "")),
+            "company": item.get("company_name", ""),
             "tags": item.get("tags", []),                 # may be empty
             "location": item.get("location", ""),
-            "date_posted": item.get("date_posted", ""),   # optional
+            "extensions": item.get("extensions", {}),   
             "apply_link": item.get("share_link", ""),
             "description_snippet": (
                 item.get("description", "")[:300]         # 🔑 derive snippet
@@ -210,6 +202,8 @@ def rank_jobs_by_similarity(
 
     # 3️⃣ Sort by similarity score
     results.sort(key=lambda x: x["score"], reverse=True)
+    print(f"Top job match score: {results[0]['score'] if results else 'N/A'}")
+    print(f"Top company name: {results[0]['company'] if results else 'N/A'}")
 
     return results[:top_k]
 
@@ -244,11 +238,15 @@ async def jobs_ws(ws: WebSocket):
                 job_id = ranked_job_ids[count]
                 count += 1
 
-                doc = db.collection("jobs").document(job_id).get()
+                doc = db.collection("resumes").document(job_id).get()
                 if doc.exists:
+                    job_data = doc.to_dict()
+                    job_data = {key: job_data.get(key, "") for key in ["apply_options", "company_name", "description", "detected_extensions", "extensions", "job_highlights", "location", "title"]}
+                    job_data["id"] = job_id
+                    
                     await ws.send_json({
                         "type": "JOB",
-                        "job": doc.to_dict() | {"id": job_id}
+                        "job": job_data
                     })
 
                 user_ref.update({"count": count})
@@ -334,18 +332,53 @@ async def save_profile(user: dict = Depends(get_current_user)):
         ranked_job_ids = user_doc.to_dict().get("ranked_job_ids", [])
         #fetch only top 5 based on count*5
         jobs_to_send = ranked_job_ids[count : count + 5]
-        #update count in firestore if jobs==1
-        # if jobs==1:
-        #     db.collection("users").document(user["uid"]).update({
-        #         "count": count + 1
-        #     })
+        #write code fetching these job details from firestore
+        jobs_to_send_details = []
+        for job_id in jobs_to_send:
+            job_doc = db.collection("resumes").document(job_id).get()
+            if job_doc.exists:
+                job_data = job_doc.to_dict()
+                job_data = {key: job_data.get(key, "") for key in ["apply_options", "company_name", "description", "detected_extensions", "extensions", "job_highlights", "location", "title"]}
+                job_data["id"] = job_id
+                jobs_to_send_details.append(job_data)
  
+        print("Ranked jobs sent successfully.")#also shows ranked_job_ids
+        print(jobs_to_send_details)
         return {
             "success": True,
-            "ranked_jobs": jobs_to_send,
+            "ranked_jobs":jobs_to_send_details,
             "total_jobs": len(ranked_job_ids)
         }
         
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.get("/debug/ranked_jobs")
+async def debug_ranked_jobs(user: dict = Depends(get_current_user)):
+    """Debug endpoint: compute and return ranked jobs and a sample of the resumes DB.
+    This is protected by the same auth used elsewhere and is intended for debugging only.
+    """
+    try:
+        user_doc = db.collection("users").document(user["uid"]).get()
+        if not user_doc.exists:
+            raise HTTPException(status_code=404, detail="User data not found")
+
+        job_dict = user_doc.to_dict().get("job_dict", {})
+        database = load_job_database()
+
+        # Compute ranking (in-memory, do not store)
+        ranked = rank_jobs_by_similarity(job_dict, database, top_k=50)
+
+        # Provide a sample mapping of doc ids -> titles from the DB to inspect whether doc ids are titles
+        db_sample = [{"doc_id": d.get("id"), "title": d.get("title")} for d in database[:50]]
+
+        return {
+            "success": True,
+            "ranked_jobs_sample": ranked[:20],
+            "database_sample": db_sample
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     

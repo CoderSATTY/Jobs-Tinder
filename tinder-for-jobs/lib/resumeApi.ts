@@ -7,14 +7,15 @@ export interface UploadResumeResponse {
 
 export interface DatabaseJob {
   id: string;
-  title: string;
-  company: string;
-  tags: string[];
-  location: string;
-  date_posted: string;
-  apply_link: string;
-  description_snippet: string;
-  score: number;
+  title: string;           // legacy field
+  company_name?: string;       // Firestore field
+  location?: string;
+  apply_options?: any[];
+  description?: string;        // Firestore field
+  score?: string;
+  detected_extensions?: boolean[];   // Firestore field (array or string)
+  extensions?: string[];            // Firestore field (object or array)
+  job_highlights?: string[];   // Firestore field
 }
 
 export type InfoDict = Record<string, any>;

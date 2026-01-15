@@ -15,9 +15,6 @@ import { useRouter } from "next/navigation";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
 
-/* ======================
-   WS message types
-====================== */
 type WSMessage =
   | { type: "JOB"; job: DatabaseJob }
   | { type: "END" };
@@ -29,35 +26,38 @@ export default function DiscoveryPage() {
   const { getIdToken } = useAuth();
 
   /* ======================
-     Feed + WS state
+      Feed + WS state
   ====================== */
   const [jobs, setJobs] = useState<DatabaseJob[]>([]);
   const socketRef = useRef<WebSocket | null>(null);
   const isFetchingRef = useRef(false);
 
   /* ======================
-     1️⃣ HTTP: INITIAL LOAD
+      1️⃣ HTTP: INITIAL LOAD
   ====================== */
   useEffect(() => {
     async function loadInitialJobs() {
       const token = await getIdToken();
       if (!token) return;
 
-      const res = await fetch(`${BACKEND_URL}/save-profile`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await res.json();
-      setJobs(data.ranked_jobs || []); // initial 5
+      try {
+        const res = await fetch(`${BACKEND_URL}/save-profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await res.json();
+        setJobs(data.ranked_jobs || []);
+      } catch (error) {
+        console.error("Failed to load initial jobs:", error);
+      }
     }
 
     loadInitialJobs();
   }, [getIdToken]);
 
   /* ======================
-     2️⃣ WebSocket: NEXT ONLY
+      2️⃣ WebSocket: NEXT ONLY
   ====================== */
   useEffect(() => {
     if (jobs.length === 0) return;
@@ -72,17 +72,16 @@ export default function DiscoveryPage() {
 
       ws.onmessage = (event) => {
         const msg: WSMessage = JSON.parse(event.data);
-
         if (msg.type === "JOB") {
-          setJobs((prev) => [...prev, msg.job]); // append
+          setJobs((prev) => [...prev, msg.job]);
           isFetchingRef.current = false;
         }
       };
-    }
+    };
 
     connectWS();
     return () => ws?.close();
-  }, [getIdToken, jobs.length]);
+  }, [getIdToken, jobs.length > 0]); // Changed dependency to track if we have at least one job
 
   const requestNextJob = () => {
     if (isFetchingRef.current) return;
@@ -93,17 +92,10 @@ export default function DiscoveryPage() {
     );
   };
 
-  /* ======================
-     Existing UI state
-  ====================== */
-  const [swipedJobs, setSwipedJobs] = useState<
-    { job: DatabaseJob; direction: "left" | "right" }[]
-  >([]);
   const [matches, setMatches] = useState<DatabaseJob[]>([]);
   const [selectedJob, setSelectedJob] = useState<DatabaseJob | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [exitDirection, setExitDirection] =
-    useState<"left" | "right" | null>(null);
+  const [exitDirection, setExitDirection] = useState<"left" | "right" | null>(null);
 
   const [filters, setFilters] = useState<FilterState>({
     remote: [],
@@ -112,29 +104,29 @@ export default function DiscoveryPage() {
     location: "",
   });
 
-  /* ======================
-     Filtering (unchanged)
-  ====================== */
-  // const filteredJobs = useMemo(() => {
-  //   return jobs.filter((job) => {
-  //     if (
-  //       filters.location &&
-  //       !job.location.toLowerCase().includes(filters.location.toLowerCase())
-  //     ) {
-  //       return false;
-  //     }
-  //     return true;
-  //   });
-  // }, [jobs, filters]);
-
   const currentJob = jobs[0];
-  const matchScore = currentJob && typeof currentJob.score === 'number' 
-    ? Math.round(currentJob.score * 100) 
-    : 0;
+  useEffect(() => {
+    console.log("Current job:", currentJob?.description);
+  }, [currentJob]);
 
-  /* ======================
-     Swipe logic (CORE)
-  ====================== */
+
+  // Updated Score Logic: Handle string scores and convert to percentage
+  const matchScore = useMemo(() => {
+    if (!currentJob?.score) return 0;
+    const s = typeof currentJob.score === 'string'
+      ? parseFloat(currentJob.score)
+      : currentJob.score;
+    return isNaN(s) ? 0 : Math.round(s * 100);
+  }, [currentJob]);
+
+  // Updated Tag Logic: Prefer extensions then highlights
+  const currentTags = useMemo(() => {
+    if (!currentJob) return [];
+    if (Array.isArray(currentJob.extensions)) return currentJob.extensions;
+    if (Array.isArray(currentJob.job_highlights)) return currentJob.job_highlights;
+    return [];
+  }, [currentJob]);
+
   const handleSwipe = useCallback(
     (direction: "left" | "right") => {
       if (!currentJob) return;
@@ -150,12 +142,8 @@ export default function DiscoveryPage() {
       }
 
       setTimeout(() => {
-        // remove first
         setJobs((prev) => prev.slice(1));
-
-        // fetch exactly one more
         requestNextJob();
-
         setExitDirection(null);
       }, 300);
     },
@@ -168,9 +156,6 @@ export default function DiscoveryPage() {
     setIsModalOpen(true);
   }, [currentJob]);
 
-  /* ======================
-     Empty state
-  ====================== */
   if (jobs.length === 0) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -178,37 +163,32 @@ export default function DiscoveryPage() {
           <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
             <Briefcase className="w-12 h-12 text-primary" />
           </div>
-          <h2 className="text-2xl font-bold text-foreground mb-3">
-            No Jobs Yet
-          </h2>
+          <h2 className="text-2xl font-bold text-foreground mb-3">No Jobs Yet</h2>
           <p className="text-muted-foreground mb-6">
             Upload your resume to get personalized job recommendations.
           </p>
-          <Button onClick={() => router.push("/profile")}>
-            Upload Resume
-          </Button>
+          <Button onClick={() => router.push("/profile")}>Upload Resume</Button>
         </div>
       </div>
     );
   }
 
-  /* ======================
-     UI (UNCHANGED)
-  ====================== */
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Sidebar Stats */}
             <div className="lg:col-span-2 space-y-3 order-2 lg:order-1">
               {currentJob && (
                 <>
                   <MatchScore score={matchScore} />
-                  <AnimatedTags tags={currentJob.tags} />
+                  <AnimatedTags tags={currentTags} />
                 </>
               )}
             </div>
 
+            {/* Main Swipe Area */}
             <div className="lg:col-span-7 order-1 lg:order-2">
               <div className="relative min-h-[620px] flex flex-col items-center">
                 <div className="relative w-full max-w-md h-[480px]">
@@ -232,16 +212,17 @@ export default function DiscoveryPage() {
                 />
 
                 <p className="text-xs text-muted-foreground mt-2">
-                  {jobs.length} jobs remaining
+                  {jobs.length} jobs in queue
                 </p>
               </div>
             </div>
 
+            {/* Sidebar Filters/Matches */}
             <div className="lg:col-span-3 order-3">
-              <div className="mt-4 bg-success/10 rounded-2xl p-4 border">
+              <div className="mt-4 bg-emerald-500/10 rounded-2xl p-4 border border-emerald-500/20">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Your Matches</span>
-                  <span className="text-2xl font-bold text-success">
+                  <span className="text-sm font-medium">Saved Matches</span>
+                  <span className="text-2xl font-bold text-emerald-500">
                     {matches.length}
                   </span>
                 </div>

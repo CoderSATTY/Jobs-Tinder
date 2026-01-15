@@ -3,9 +3,44 @@ import React from "react";
 
 type Props = { parsed: any };
 
+/* ======================
+   SAFE VALUE RENDERER
+====================== */
+function renderValue(value: any): string {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (Array.isArray(value)) {
+    return value
+      .map((v) =>
+        typeof v === "string" || typeof v === "number"
+          ? v
+          : JSON.stringify(v)
+      )
+      .join(", ");
+  }
+  if (typeof value === "object") {
+    // 🔒 CRITICAL: prevents React crash
+    if ("description" in value) return String(value.description);
+    return JSON.stringify(value);
+  }
+  return "—";
+}
+
 export default function ParsedProfileView({ parsed }: Props) {
   if (!parsed) return null;
-  const display = parsed;
+
+  const info = parsed.info_dict ?? {};
+  const job = parsed.job_dict ?? {};
+
+  const experiences = Array.isArray(job.experiences) ? job.experiences : [];
+  const projects = Array.isArray(job.projects) ? job.projects : [];
+  const techStack = Array.isArray(job.tech_stack) ? job.tech_stack : [];
+  const positions = Array.isArray(job.positions_of_responsibility)
+    ? job.positions_of_responsibility
+    : [];
+  const courses = Array.isArray(job.key_courses_taken)
+    ? job.key_courses_taken
+    : [];
 
   return (
     <section className="mb-8 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-8 shadow-sm">
@@ -22,102 +57,107 @@ export default function ParsedProfileView({ parsed }: Props) {
       {/* Basic Info + Education */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Basic Info */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Basic Information
-          </h3>
-          <div className="space-y-2 text-sm text-slate-700">
-            <InfoRow label="Name" value={display.info_dict?.full_name} />
-            <InfoRow label="Email" value={display.info_dict?.email} />
-            <InfoRow label="Phone" value={display.info_dict?.phone} />
-            <InfoRow label="Location" value={display.info_dict?.location} />
-            <InfoRow label="Roll No" value={display.info_dict?.roll_no} />
-          </div>
-        </div>
+        <Card title="Basic Information">
+          <InfoRow label="Name" value={info.full_name} />
+          <InfoRow label="Email" value={info.email} />
+          <InfoRow label="Phone" value={info.phone} />
+          <InfoRow label="Location" value={info.location} />
+          <InfoRow label="Roll No" value={info.roll_no} />
+        </Card>
 
         {/* Education */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Education & Scores
-          </h3>
-          <div className="space-y-2 text-sm text-slate-700">
-            <InfoRow label="College" value={display.job_dict?.college} />
-            <InfoRow label="Branch" value={display.job_dict?.branch} />
-            <InfoRow
-              label="Graduation Year"
-              value={display.job_dict?.year_of_graduation}
-            />
-            <InfoRow label="CGPA" value={display.job_dict?.cgpa} />
-          </div>
-        </div>
+        <Card title="Education & Scores">
+          <InfoRow label="College" value={job.college} />
+          <InfoRow label="Branch" value={job.branch} />
+          <InfoRow label="Graduation Year" value={job.year_of_graduation} />
+          <InfoRow label="CGPA" value={job.cgpa} />
+        </Card>
       </div>
 
       {/* Links */}
-      <div className="mt-8 rounded-xl border border-slate-200 bg-white p-5">
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Links
-        </h3>
-        <div className="space-y-2 text-sm">
-          <LinkRow label="GitHub" href={display.job_dict?.github} />
-          <LinkRow label="LinkedIn" href={display.job_dict?.linkedin} />
-        </div>
-      </div>
+      <Section title="Links">
+        <LinkRow label="GitHub" href={job.github} />
+        <LinkRow label="LinkedIn" href={job.linkedin} />
+      </Section>
 
       {/* Tech Stack */}
-      <div className="mt-8 rounded-xl border border-slate-200 bg-white p-5">
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Tech Stack
-        </h3>
+      <Section title="Tech Stack">
         <div className="flex flex-wrap gap-2">
-          {(display.job_dict?.tech_stack || []).map((t: string) => (
-            <span
-              key={t}
-              className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
-            >
-              {t}
-            </span>
-          ))}
+          {techStack.length > 0 ? (
+            techStack.map((t: any, i: number) => (
+              <span
+                key={i}
+                className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
+              >
+                {renderValue(t)}
+              </span>
+            ))
+          ) : (
+            <span className="text-slate-400 text-sm">—</span>
+          )}
         </div>
-      </div>
+      </Section>
 
       {/* Experiences */}
       <Section title="Experiences">
-        {(display.job_dict?.experiences || []).map((e: any, i: number) => (
-          <Card key={i}>
-            <div className="flex items-center justify-between">
-              <div className="font-medium text-slate-900">
-                {e.position}
-                {e.company && (
-                  <span className="text-slate-500"> @ {e.company}</span>
-                )}
+        {experiences.length > 0 ? (
+          experiences.map((e: any, i: number) => (
+            <Card key={i}>
+              <div className="flex items-center justify-between">
+                <div className="font-medium text-slate-900">
+                  {renderValue(e.position)}
+                  {e.company && (
+                    <span className="text-slate-500">
+                      {" "}@ {renderValue(e.company)}
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs text-slate-500">
+                  {renderValue(e.duration)}
+                </span>
               </div>
-              <span className="text-xs text-slate-500">{e.duration}</span>
-            </div>
-            <p className="mt-2 text-sm text-slate-700">{e.description}</p>
-          </Card>
-        ))}
+              <p className="mt-2 text-sm text-slate-700">
+                {renderValue(e.description)}
+              </p>
+            </Card>
+          ))
+        ) : (
+          <span className="text-slate-400 text-sm">—</span>
+        )}
       </Section>
 
       {/* Projects */}
       <Section title="Projects">
-        {(display.job_dict?.projects || []).map((p: any, i: number) => (
-          <Card key={i}>
-            <div className="flex items-center justify-between">
-              <div className="font-medium text-slate-900">{p.name}</div>
-              <span className="text-xs text-slate-500">{p.duration}</span>
-            </div>
-            <p className="mt-2 text-sm text-slate-700">{p.description}</p>
-          </Card>
-        ))}
+        {projects.length > 0 ? (
+          projects.map((p: any, i: number) => (
+            <Card key={i}>
+              <div className="flex items-center justify-between">
+                <div className="font-medium text-slate-900">
+                  {renderValue(p.name)}
+                </div>
+                <span className="text-xs text-slate-500">
+                  {renderValue(p.duration)}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-slate-700">
+                {renderValue(p.description)}
+              </p>
+            </Card>
+          ))
+        ) : (
+          <span className="text-slate-400 text-sm">—</span>
+        )}
       </Section>
 
       {/* Positions */}
       <Section title="Positions of Responsibility">
         <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">
-          {(display.job_dict?.positions_of_responsibility || []).map(
-            (q: string, i: number) => (
-              <li key={i}>{q}</li>
-            )
+          {positions.length > 0 ? (
+            positions.map((q: any, i: number) => (
+              <li key={i}>{renderValue(q)}</li>
+            ))
+          ) : (
+            <li className="text-slate-400">—</li>
           )}
         </ul>
       </Section>
@@ -125,52 +165,56 @@ export default function ParsedProfileView({ parsed }: Props) {
       {/* Courses */}
       <Section title="Key Courses">
         <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">
-          {(display.job_dict?.key_courses_taken || []).map(
-            (q: string, i: number) => (
-              <li key={i}>{q}</li>
-            )
+          {courses.length > 0 ? (
+            courses.map((q: any, i: number) => (
+              <li key={i}>{renderValue(q)}</li>
+            ))
+          ) : (
+            <li className="text-slate-400">—</li>
           )}
         </ul>
       </Section>
 
       {/* Raw JSON */}
-      <div className="mt-8 rounded-xl border border-slate-200 bg-slate-900 p-5">
-        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">
-          Raw JSON
-        </h3>
-        <pre className="max-h-64 overflow-auto text-xs text-slate-100">
-          {JSON.stringify(display, null, 2)}
+      <Section title="Raw JSON">
+        <pre className="max-h-64 overflow-auto text-xs text-slate-100 bg-slate-900 rounded-lg p-4">
+          {JSON.stringify(parsed, null, 2)}
         </pre>
-      </div>
+      </Section>
     </section>
   );
 }
 
-/* ---------- Small UI helpers (no logic) ---------- */
+/* ======================
+   SMALL UI HELPERS
+====================== */
 
-function InfoRow({ label, value }: { label: string; value?: any }) {
+function InfoRow({ label, value }: { label: string; value: any }) {
   return (
-    <div className="flex justify-between gap-4">
+    <div className="flex justify-between gap-4 text-sm">
       <span className="text-slate-500">{label}</span>
-      <span className="font-medium text-slate-900">
-        {value ?? "—"}
+      <span className="font-medium text-slate-900 text-right max-w-[60%] break-words">
+        {renderValue(value)}
       </span>
     </div>
   );
 }
 
-function LinkRow({ label, href }: { label: string; href?: string }) {
+function LinkRow({ label, href }: { label: string; href?: any }) {
+  const safeHref =
+    typeof href === "string" && href.startsWith("http") ? href : null;
+
   return (
-    <div className="flex justify-between gap-4">
+    <div className="flex justify-between gap-4 text-sm">
       <span className="text-slate-500">{label}</span>
-      {href ? (
+      {safeHref ? (
         <a
-          href={href}
+          href={safeHref}
           target="_blank"
           rel="noreferrer"
-          className="font-medium text-indigo-600 hover:underline"
+          className="font-medium text-indigo-600 hover:underline break-all"
         >
-          {href}
+          {safeHref}
         </a>
       ) : (
         <span className="text-slate-400">—</span>
@@ -196,10 +240,21 @@ function Section({
   );
 }
 
-function Card({ children }: { children: React.ReactNode }) {
+function Card({
+  title,
+  children,
+}: {
+  title?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      {children}
+    <div className="rounded-xl border border-slate-200 bg-white p-5">
+      {title && (
+        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          {title}
+        </h3>
+      )}
+      <div className="space-y-2">{children}</div>
     </div>
   );
 }
