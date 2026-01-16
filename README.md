@@ -6,23 +6,15 @@ SwipeHire is a modern job discovery platform that leverages advanced NLP and mac
 
 ## 🏗️ Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        SwipeHire Platform                        │
-├─────────────────────────────────────────────────────────────────┤
-│  Frontend (Next.js)              │  Backend (FastAPI + Python)  │
-│  ├─ Landing Page                 │  ├─ Resume Parser            │
-│  ├─ Authentication (Firebase)    │  ├─ Embedding Generator      │
-│  ├─ Resume Upload                │  ├─ Semantic Ranker          │
-│  ├─ Discovery Interface          │  ├─ Job Recommendation       │
-│  ├─ AI Chatbot (RAG)             │  └─ Chat API (Gemini)        │
-│  └─ Matches Dashboard            │                               │
-├─────────────────────────────────────────────────────────────────┤
-│                    Data Layer (Firestore)                        │
-│  ├─ User Profiles        ├─ Job Listings                        │
-│  ├─ Parsed Resumes       └─ Saved Matches                       │
-└─────────────────────────────────────────────────────────────────┘
-```
+### Architecture Diagram
+
+![Architecture Diagram](https://mermaid.ink/img/Zmxvd2NoYXJ0IFRCCiAgICBzdWJncmFwaCBDbGllbnRbIkZyb250ZW5kIChOZXh0LmpzICsgVHlwZVNjcmlwdCkiXQogICAgICAgIFVJW1JlYWN0IFVJIENvbXBvbmVudHNdCiAgICAgICAgQXV0aFtGaXJlYmFzZSBBdXRoXQogICAgICAgIFdTW1dlYlNvY2tldCBDbGllbnRdCiAgICAgICAgQ2hhdFtSQUcgQ2hhdCBJbnRlcmZhY2VdCiAgICBlbmQKCiAgICBzdWJncmFwaCBBUElbIkJhY2tlbmQgKEZhc3RBUEkgKyBQeXRob24pIl0KICAgICAgICBSb3V0ZXJbQVBJIFJvdXRlcl0KICAgICAgICBQYXJzZXJbUmVzdW1lIFBhcnNlcl0KICAgICAgICBFbWJlZGRlcltFbWJlZGRpbmcgR2VuZXJhdG9yXQogICAgICAgIFJhbmtlcltTZW1hbnRpYyBSYW5rZXJdCiAgICAgICAgUkFHW1JBRyBFbmdpbmVdCiAgICBlbmQKCiAgICBzdWJncmFwaCBOTFBbIk5MUCBQaXBlbGluZSJdCiAgICAgICAgR2VtaW5pW0dvb2dsZSBHZW1pbmkgTExNXQogICAgICAgIFRleHRFbWJlZFt0ZXh0LWVtYmVkZGluZy0wMDRdCiAgICAgICAgVG9rZW5pemVyW1RleHQgUHJlcHJvY2Vzc2luZ10KICAgIGVuZAoKICAgIHN1YmdyYXBoIERhdGFbIkRhdGEgTGF5ZXIgKEZpcmVzdG9yZSkiXQogICAgICAgIFVzZXJzWyhVc2VyIFByb2ZpbGVzKV0KICAgICAgICBKb2JzWyhKb2IgQ29ycHVzKV0KICAgICAgICBNYXRjaGVzWyhTYXZlZCBNYXRjaGVzKV0KICAgIGVuZAoKICAgIFVJIC0tPnxVcGxvYWQgUERGL0RPQ1h8IFJvdXRlcgogICAgUm91dGVyIC0tPiBQYXJzZXIKICAgIFBhcnNlciAtLT58UmF3IFRleHR8IFRva2VuaXplcgogICAgVG9rZW5pemVyIC0tPnxDbGVhbmVkIFRleHR8IEdlbWluaQogICAgR2VtaW5pIC0tPnxTdHJ1Y3R1cmVkIEpTT058IFBhcnNlcgogICAgUGFyc2VyIC0tPnxSZXN1bWUgRGF0YXwgRW1iZWRkZXIKICAgIEVtYmVkZGVyIC0tPiBUZXh0RW1iZWQKICAgIFRleHRFbWJlZCAtLT58NzY4LWRpbSBWZWN0b3J8IFVzZXJzCgogICAgV1MgPC0tPnxTdHJlYW0gSm9ic3wgUmFua2VyCiAgICBSYW5rZXIgLS0-IEpvYnMKICAgIFJhbmtlciAtLT58Q29zaW5lIFNpbWlsYXJpdHl8IFRleHRFbWJlZAogICAgUmFua2VyIC0tPnxSYW5rZWQgUmVzdWx0c3wgV1MKCiAgICBDaGF0IC0tPiBSQUcKICAgIFJBRyAtLT58Q29udGV4dDogUmVzdW1lICsgSm9ifCBHZW1pbmkKICAgIEdlbWluaSAtLT58U1NFIFN0cmVhbXwgQ2hhdAoKICAgIEF1dGggPC0tPiBVc2VycwogICAgVUkgLS0-fFNhdmUgTWF0Y2h8IE1hdGNoZXM=)
+
+
+### Pipeline Flow
+
+![Pipeline Flow](https://mermaid.ink/img/Zmxvd2NoYXJ0IExSCiAgICBBW_Cfk4QgUmVzdW1lIFVwbG9hZF0gLS0-fFB5TXVQREYvZG9jeHwgQltUZXh0IEV4dHJhY3Rpb25dCiAgICBCIC0tPnxEYXRhIENsZWFuaW5nfCBDW05MUCBQcmVwcm9jZXNzaW5nXQogICAgQyAtLT58R2VtaW5pIExMTXwgRFtFbnRpdHkgRXh0cmFjdGlvbl0KICAgIEQgLS0-fEpTT04gU2NoZW1hfCBFW1N0cnVjdHVyZWQgUHJvZmlsZV0KICAgIEUgLS0-fHRleHQtZW1iZWRkaW5nLTAwNHwgRltWZWN0b3IgRW1iZWRkaW5nXQogICAgRiAtLT58RmlyZXN0b3JlfCBHWyhVc2VyIFN0b3JlKV0KICAgIAogICAgRyAtLT4gSHtTZW1hbnRpYyBSYW5rZXJ9CiAgICBJWyhKb2IgQ29ycHVzKV0gLS0-IEgKICAgIEggLS0-fENvc2luZSBTaW1pbGFyaXR5fCBKW1Njb3JlIENhbGN1bGF0aW9uXQogICAgSiAtLT58VG9wLUsgU2VsZWN0aW9ufCBLW1dlYlNvY2tldCBTdHJlYW1dCiAgICBLIC0tPiBMW_Cfk7EgRGlzY292ZXJ5IFVJXQogICAgCiAgICBMIC0tPnxVc2VyIFF1ZXJ5fCBNW1JBRyBFbmdpbmVdCiAgICBHIC0tPnxSZXN1bWUgQ29udGV4dHwgTQogICAgSSAtLT58Sm9iIENvbnRleHR8IE0KICAgIE0gLS0-fEdlbWluaSBTdHJlYW1pbmd8IE5b8J-SrCBBSSBSZXNwb25zZV0=)
+
 
 ## 🔬 Core Pipeline
 
