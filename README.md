@@ -1,83 +1,120 @@
-# SwipeHire
+# 💼 SwipeHire
 
 > AI-Powered Job Discovery Platform with Semantic Matching & Conversational RAG
 
 SwipeHire is a modern job discovery platform that leverages advanced NLP and machine learning to match candidates with opportunities using semantic understanding of resumes and job descriptions.
 
-## 🏗️ Architecture Overview
+---
 
-### Architecture Diagram
+## Architecture Overview
 
-![Architecture Diagram](https://mermaid.ink/img/Zmxvd2NoYXJ0IFRCCiAgICBzdWJncmFwaCBEYXRhU291cmNlc1siRGF0YSBBY3F1aXNpdGlvbiJdCiAgICAgICAgZGlyZWN0aW9uIFRCCiAgICAgICAgU2NyYXBlclsiV2ViIFNjcmFwaW5nPGJyLz4oSm9iU3B5KSJdCiAgICAgICAgVXBsb2Fkc1siVXNlciBVcGxvYWRzPGJyLz4oUERGL0RPQ1gpIl0KICAgIGVuZAoKICAgIHN1YmdyYXBoIFByb2Nlc3NpbmdbIkRhdGEgUHJvY2Vzc2luZyAmIE5MUCJdCiAgICAgICAgZGlyZWN0aW9uIFRCCiAgICAgICAgT0NSWyJPQ1IgJiBQYXJzaW5nPGJyLz4ocHl0ZXNzZXJhY3QsIFB5TXVQREYpIl0KICAgICAgICBDbGVhbmVyWyJEYXRhIENsZWFuaW5nICY8YnIvPk5vcm1hbGl6YXRpb24iXQogICAgICAgIExMTVsiTExNIFJlYXNvbmluZzxici8-KEdlbWluaSAyLjUpIl0KICAgICAgICBFbWJlZGRlclsiVmVjdG9yIEVtYmVkZGluZzxici8-KHRleHQtZW1iZWRkaW5nLTAwNCkiXQogICAgZW5kCgogICAgc3ViZ3JhcGggU3RvcmFnZVsiUGVyc2lzdGVuY2UgTGF5ZXIgKEZpcmViYXNlKSJdCiAgICAgICAgZGlyZWN0aW9uIFRCCiAgICAgICAgRmlyZXN0b3JlWygiRmlyZXN0b3JlPGJyLz5Ob1NRTCIpXQogICAgICAgIFZlY3RvcnNbKCJWZWN0b3IgU3RvcmUiKV0KICAgIGVuZAoKICAgIHN1YmdyYXBoIEFwcGxpY2F0aW9uWyJBcHBsaWNhdGlvbiBMb2dpYyJdCiAgICAgICAgZGlyZWN0aW9uIFRCCiAgICAgICAgUmFua2VyWyJTZW1hbnRpYzxici8-UmFua2VyIl0KICAgICAgICBSQUdbIkluLU1lbW9yeTxici8-UkFHIEVuZ2luZSJdCiAgICAgICAgQ2hhdGJvdFsiR2VuZXJhdGl2ZTxici8-Q2hhdGJvdCJdCiAgICBlbmQKCiAgICBzdWJncmFwaCBDbGllbnRbIlByZXNlbnRhdGlvbiBMYXllciJdCiAgICAgICAgZGlyZWN0aW9uIFRCCiAgICAgICAgV1NbIldlYlNvY2tldDxici8-U3RyZWFtIl0KICAgICAgICBOZXh0SlNbIk5leHQuanM8YnIvPkZyb250ZW5kIl0KICAgIGVuZAoKICAgICUlIERhdGEgRmxvdwogICAgU2NyYXBlciAmIFVwbG9hZHMgLS0-IE9DUgogICAgT0NSIC0tPiBDbGVhbmVyCiAgICBDbGVhbmVyIC0tPiBMTE0KICAgIExMTSAtLT4gRW1iZWRkZXIKICAgIAogICAgJSUgU3RvcmFnZSBGbG93CiAgICBDbGVhbmVyIC0tPiBGaXJlc3RvcmUKICAgIEVtYmVkZGVyIC0tPiBWZWN0b3JzCiAgICAKICAgICUlIExvZ2ljIEZsb3cKICAgIFZlY3RvcnMgJiBGaXJlc3RvcmUgLS0-IFJhbmtlcgogICAgRmlyZXN0b3JlIC0uLT4gUkFHCiAgICAKICAgICUlIEFwcCBGbG93CiAgICBSYW5rZXIgLS0-IFdTCiAgICBSQUcgLS0-IENoYXRib3QKICAgIAogICAgJSUgQ2xpZW50IEZsb3wKICAgIENoYXRib3QgJiBXUyAtLT4gTmV4dEpT)
+### System Architecture
 
+The platform follows a microservices-inspired architecture deployed on serverless infrastructure (Modal) with a modern frontend (Next.js on Vercel).
 
-### Pipeline Flow
+![Architecture Diagram](https://mermaid.ink/img/Zmxvd2NoYXJ0IExSCiAgICBzdWJncmFwaCBDbGllbnRbIkNsaWVudCBMYXllciJdCiAgICAgICAgZGlyZWN0aW9uIFRCCiAgICAgICAgTmV4dEpTWyJOZXh0LmpzIDE2Jmx0O2JyLyZndDsmbHQ7aSZndDtSZWFjdCBGcmFtZXdvcmsmbHQ7L2kmZ3Q7Il0KICAgICAgICBWZXJjZWxbIlZlcmNlbCBFZGdlJmx0O2JyLyZndDsmbHQ7aSZndDtDRE4gYW5kIFNTUiZsdDsvaSZndDsiXQogICAgICAgIE5leHRKUyAtLT4gVmVyY2VsCiAgICBlbmQKCiAgICBzdWJncmFwaCBHYXRld2F5WyJBUEkgR2F0ZXdheSJdCiAgICAgICAgZGlyZWN0aW9uIFRCCiAgICAgICAgQXV0aFsiRmlyZWJhc2UgQXV0aCZsdDtici8mZ3Q7Jmx0O2kmZ3Q7SldUIFRva2VucyZsdDsvaSZndDsiXQogICAgICAgIENPUlNbIkNPUlMgTWlkZGxld2FyZSZsdDtici8mZ3Q7Jmx0O2kmZ3Q7T3JpZ2luIFZhbGlkYXRpb24mbHQ7L2kmZ3Q7Il0KICAgICAgICBXU1siV2ViU29ja2V0IFNlcnZlciZsdDtici8mZ3Q7Jmx0O2kmZ3Q7UmVhbC10aW1lIFN0cmVhbWluZyZsdDsvaSZndDsiXQogICAgZW5kCgogICAgc3ViZ3JhcGggQ29tcHV0ZVsiU2VydmVybGVzcyBDb21wdXRlIC0gTW9kYWwiXQogICAgICAgIGRpcmVjdGlvbiBUQgogICAgICAgIEZhc3RBUElbIkZhc3RBUEkgQVNHSSZsdDtici8mZ3Q7Jmx0O2kmZ3Q7QXN5bmMgUkVTVCBBUEkmbHQ7L2kmZ3Q7Il0KICAgICAgICBQYXJzZXJbIlBhcnNlciBBZ2VudCZsdDtici8mZ3Q7Jmx0O2kmZ3Q7UmVzdW1lIEV4dHJhY3Rpb24mbHQ7L2kmZ3Q7Il0KICAgICAgICBSYW5rZXJbIlNlbWFudGljIFJhbmtlciZsdDtici8mZ3Q7Jmx0O2kmZ3Q7Q29zaW5lIFNpbWlsYXJpdHkmbHQ7L2kmZ3Q7Il0KICAgICAgICBSQUdbIlJBRyBFbmdpbmUmbHQ7YnIvJmd0OyZsdDtpJmd0O0NvbnRleHQgUmV0cmlldmFsJmx0Oy9pJmd0OyJdCiAgICAgICAgQ2hhdGJvdFsiTExNIENoYXRib3QmbHQ7YnIvJmd0OyZsdDtpJmd0O0dlbWluaSAyLjAgRmxhc2gmbHQ7L2kmZ3Q7Il0KICAgIGVuZAoKICAgIHN1YmdyYXBoIE5MUFsiTkxQIFBpcGVsaW5lIl0KICAgICAgICBkaXJlY3Rpb24gVEIKICAgICAgICBPQ1JbIlRlc3NlcmFjdCBPQ1ImbHQ7YnIvJmd0OyZsdDtpJmd0O1RleHQgRXh0cmFjdGlvbiZsdDsvaSZndDsiXQogICAgICAgIFBvcHBsZXJbIlBvcHBsZXIgVXRpbHMmbHQ7YnIvJmd0OyZsdDtpJmd0O1BERiBSZW5kZXJpbmcmbHQ7L2kmZ3Q7Il0KICAgICAgICBFbWJlZGRlclsiVGV4dCBFbWJlZGRlciZsdDtici8mZ3Q7Jmx0O2kmZ3Q7dGV4dC1lbWJlZGRpbmctMDA0Jmx0Oy9pJmd0OyJdCiAgICAgICAgTExNWyJMTE0gUmVhc29uZXImbHQ7YnIvJmd0OyZsdDtpJmd0O0dlbWluaSAyLjAgRmxhc2gmbHQ7L2kmZ3Q7Il0KICAgIGVuZAoKICAgIHN1YmdyYXBoIFN0b3JhZ2VbIlBlcnNpc3RlbmNlIExheWVyIl0KICAgICAgICBkaXJlY3Rpb24gVEIKICAgICAgICBGaXJlc3RvcmVbKCJGaXJlc3RvcmUmbHQ7YnIvJmd0OyZsdDtpJmd0O05vU1FMIERhdGFiYXNlJmx0Oy9pJmd0OyIpXQogICAgICAgIFZlY3RvclN0b3JlWygiVmVjdG9yIEluZGV4Jmx0O2JyLyZndDsmbHQ7aSZndDs3NjgtZGltIEVtYmVkZGluZ3MmbHQ7L2kmZ3Q7IildCiAgICAgICAgTW9kYWxWb2xbIk1vZGFsIFZvbHVtZSZsdDtici8mZ3Q7Jmx0O2kmZ3Q7Q3JlZGVudGlhbHMgU3RvcmUmbHQ7L2kmZ3Q7Il0KICAgIGVuZAoKICAgIHN1YmdyYXBoIEluZ2VzdGlvblsiRGF0YSBJbmdlc3Rpb24iXQogICAgICAgIGRpcmVjdGlvbiBUQgogICAgICAgIFNjcmFwZXJbIkpvYlNweSBTY3JhcGVyJmx0O2JyLyZndDsmbHQ7aSZndDtNdWx0aS1Tb3VyY2UgQWdncmVnYXRvciZsdDsvaSZndDsiXQogICAgICAgIFVwbG9hZFsiUmVzdW1lIFVwbG9hZCZsdDtici8mZ3Q7Jmx0O2kmZ3Q7UERGL0RPQ1ggUGFyc2VyJmx0Oy9pJmd0OyJdCiAgICBlbmQKCiAgICAlJSBDbGllbnQgdG8gR2F0ZXdheQogICAgQ2xpZW50IC0tPnxIVFRQU3wgR2F0ZXdheQogICAgVmVyY2VsIC0tPnxSRVNUfCBGYXN0QVBJCiAgICBWZXJjZWwgLS0-fFdTU3wgV1MKCiAgICAlJSBHYXRld2F5IHRvIENvbXB1dGUKICAgIEF1dGggLS0-IEZhc3RBUEkKICAgIFdTIC0tPiBSYW5rZXIKCiAgICAlJSBJbmdlc3Rpb24gdG8gTkxQCiAgICBTY3JhcGVyIC0tPiBGaXJlc3RvcmUKICAgIFVwbG9hZCAtLT4gT0NSCiAgICBPQ1IgLS0-IFBvcHBsZXIKICAgIFBvcHBsZXIgLS0-IExMTQogICAgTExNIC0tPiBFbWJlZGRlcgoKICAgICUlIE5MUCB0byBTdG9yYWdlCiAgICBFbWJlZGRlciAtLT4gVmVjdG9yU3RvcmUKICAgIFBhcnNlciAtLT4gRmlyZXN0b3JlCgogICAgJSUgQ29tcHV0ZSB1c2VzIE5MUCBhbmQgU3RvcmFnZQogICAgRmFzdEFQSSAtLT4gUGFyc2VyCiAgICBGYXN0QVBJIC0tPiBSYW5rZXIKICAgIEZhc3RBUEkgLS0-IFJBRwogICAgUkFHIC0tPiBDaGF0Ym90CiAgICBSYW5rZXIgLS0-IFZlY3RvclN0b3JlCiAgICBSYW5rZXIgLS0-IEZpcmVzdG9yZQogICAgUkFHIC0tPiBGaXJlc3RvcmUKICAgIENoYXRib3QgLS0-IExMTQ==)
 
-![Pipeline Flow](https://mermaid.ink/img/Zmxvd2NoYXJ0IFRCCiAgICBzdWJncmFwaCBJbmdlc3Rpb25bIjEuIERhdGEgSW5nZXN0aW9uIl0KICAgICAgICBkaXJlY3Rpb24gVEIKICAgICAgICBKb2JzWyJKb2IgQWdncmVnYXRpb248YnIvPihKb2JTcHkpIl0gCiAgICAgICAgUmVzdW1lc1siUmVzdW1lIFVwbG9hZDxici8-KFBERi9ET0NYKSJdCiAgICBlbmQKCiAgICBzdWJncmFwaCBQcmVwcm9jZXNzaW5nWyIyLiBQcmVwcm9jZXNzaW5nICYgQ2xlYW5pbmciXQogICAgICAgIGRpcmVjdGlvbiBUQgogICAgICAgIENsZWFuSm9ic1siU3RydWN0dXJlZDxici8-Sm9iIExpc3RpbmdzIl0KICAgICAgICBDbGVhblRleHRbIkNsZWFuZWQ8YnIvPlJlc3VtZSBUZXh0Il0KICAgIGVuZAoKICAgIHN1YmdyYXBoIE5MUFsiMy4gTkxQICYgU2VtYW50aWMgVW5kZXJzdGFuZGluZyJdCiAgICAgICAgZGlyZWN0aW9uIFRCCiAgICAgICAgRW50aXRpZXNbIkVudGl0eSBFeHRyYWN0aW9uPGJyLz4oU2tpbGxzL0V4cGVyaWVuY2UpIl0KICAgICAgICBFbWJlZGRpbmdzWyJWZWN0b3IgRW1iZWRkaW5nPGJyLz4oNzY4LWRpbSkiXQogICAgZW5kCgogICAgc3ViZ3JhcGggU3RvcmFnZVsiNC4gU3RvcmFnZSAmIEluZGV4aW5nIl0KICAgICAgICBkaXJlY3Rpb24gVEIKICAgICAgICBEQlsoIkZpcmViYXNlPGJyLz5GaXJlc3RvcmUiKV0KICAgIGVuZAoKICAgIHN1YmdyYXBoIERpc2NvdmVyeVsiNS4gRGlzY292ZXJ5ICYgUkFHIl0KICAgICAgICBkaXJlY3Rpb24gVEIKICAgICAgICBNYXRjaGVyWyJTZW1hbnRpYzxici8-TWF0Y2hlciJdCiAgICAgICAgQm90WyJDaGF0Ym90PGJyLz5SZXNwb25zZSJdCiAgICBlbmQKICAgIAogICAgc3ViZ3JhcGggVUlbIjYuIFVzZXIgSW50ZXJmYWNlIl0KICAgICAgICBGcm9udGVuZFsiTmV4dC5qcyBVSSJdCiAgICBlbmQKCiAgICAlJSBGbG93CiAgICBKb2JzIC0tPiBDbGVhbkpvYnMKICAgIFJlc3VtZXMgLS0-IENsZWFuVGV4dAogICAgCiAgICBDbGVhblRleHQgLS0-IEVudGl0aWVzCiAgICBDbGVhbkpvYnMgJiBDbGVhblRleHQgLS0-IEVtYmVkZGluZ3MKICAgIAogICAgRW50aXRpZXMgJiBFbWJlZGRpbmdzIC0tPiBEQgogICAgCiAgICBEQiAtLT4gTWF0Y2hlcgogICAgREIgLS0-IEJvdAogICAgCiAgICBNYXRjaGVyIC0tPiBGcm9udGVuZAogICAgQm90IC0tPiBGcm9udGVuZA==)
+**Key Components:**
 
+| Component | Technology | Description |
+|-----------|------------|-------------|
+| **Client Layer** | Next.js 16, Vercel Edge | React-based SSR frontend with CDN distribution |
+| **API Gateway** | Firebase Auth, WebSocket | JWT authentication and real-time bidirectional streaming |
+| **Serverless Compute** | Modal (ASGI) | FastAPI backend with Parser Agent, Semantic Ranker, RAG Engine |
+| **NLP Pipeline** | Tesseract, Poppler, Gemini | OCR extraction, PDF rendering, LLM reasoning, vector embeddings |
+| **Persistence** | Firestore, Vector Store | NoSQL database with semantic embedding index |
+| **Ingestion** | JobSpy Scraper | Multi-source job aggregation from LinkedIn, Indeed, Glassdoor |
 
+---
 
-## 🔬 Core Pipeline
+### Data Pipeline Flow
+
+The 7-stage pipeline processes data from ingestion through real-time delivery:
+
+![Pipeline Flow](https://mermaid.ink/img/Zmxvd2NoYXJ0IExSCiAgICBzdWJncmFwaCBQaGFzZTFbIjEuIERhdGEgQWNxdWlzaXRpb24iXQogICAgICAgIGRpcmVjdGlvbiBUQgogICAgICAgIEpvYnNbIkpvYiBTY3JhcGluZyZsdDtici8mZ3Q7Jmx0O2kmZ3Q7Sm9iU3B5IE11bHRpLVNvdXJjZSZsdDsvaSZndDsiXQogICAgICAgIFJlc3VtZVsiUmVzdW1lIFVwbG9hZCZsdDtici8mZ3Q7Jmx0O2kmZ3Q7RHJhZyBhbmQgRHJvcCBVSSZsdDsvaSZndDsiXQogICAgZW5kCgogICAgc3ViZ3JhcGggUGhhc2UyWyIyLiBEb2N1bWVudCBQcm9jZXNzaW5nIl0KICAgICAgICBkaXJlY3Rpb24gVEIKICAgICAgICBPQ1JbIk9DUiBFbmdpbmUmbHQ7YnIvJmd0OyZsdDtpJmd0O1Rlc3NlcmFjdCArIFBvcHBsZXImbHQ7L2kmZ3Q7Il0KICAgICAgICBDbGVhblsiRGF0YSBTYW5pdGl6ZXImbHQ7YnIvJmd0OyZsdDtpJmd0O1RleHQgTm9ybWFsaXphdGlvbiZsdDsvaSZndDsiXQogICAgZW5kCgogICAgc3ViZ3JhcGggUGhhc2UzWyIzLiBOTFAgYW5kIEVtYmVkZGluZ3MiXQogICAgICAgIGRpcmVjdGlvbiBUQgogICAgICAgIExMTVsiUGFyc2VyIEFnZW50Jmx0O2JyLyZndDsmbHQ7aSZndDtHZW1pbmkgMi4wIEZsYXNoJmx0Oy9pJmd0OyJdCiAgICAgICAgRW1iZWRbIlZlY3RvciBFbWJlZGRlciZsdDtici8mZ3Q7Jmx0O2kmZ3Q7NzY4LWRpbSBTZW1hbnRpYyZsdDsvaSZndDsiXQogICAgICAgIEVudGl0eVsiRW50aXR5IEV4dHJhY3RvciZsdDtici8mZ3Q7Jmx0O2kmZ3Q7U2tpbGxzIGFuZCBFeHBlcmllbmNlJmx0Oy9pJmd0OyJdCiAgICBlbmQKCiAgICBzdWJncmFwaCBQaGFzZTRbIjQuIFN0b3JhZ2UgYW5kIEluZGV4aW5nIl0KICAgICAgICBkaXJlY3Rpb24gVEIKICAgICAgICBEQlsoIkZpcmVzdG9yZSZsdDtici8mZ3Q7Jmx0O2kmZ3Q7VXNlciBQcm9maWxlcyZsdDsvaSZndDsiKV0KICAgICAgICBWREJbKCJWZWN0b3IgU3RvcmUmbHQ7YnIvJmd0OyZsdDtpJmd0O0pvYiBFbWJlZGRpbmdzJmx0Oy9pJmd0OyIpXQogICAgZW5kCgogICAgc3ViZ3JhcGggUGhhc2U1WyI1LiBSZXRyaWV2YWwgYW5kIFJhbmtpbmciXQogICAgICAgIGRpcmVjdGlvbiBUQgogICAgICAgIFJldHJpZXZlclsiU2VtYW50aWMgUmV0cmlldmVyJmx0O2JyLyZndDsmbHQ7aSZndDtBTk4gU2VhcmNoJmx0Oy9pJmd0OyJdCiAgICAgICAgUmFua2VyWyJTY29yZSBSYW5rZXImbHQ7YnIvJmd0OyZsdDtpJmd0O0Nvc2luZSBTaW1pbGFyaXR5Jmx0Oy9pJmd0OyJdCiAgICBlbmQKCiAgICBzdWJncmFwaCBQaGFzZTZbIjYuIFJBRyBhbmQgUmVzcG9uc2UiXQogICAgICAgIGRpcmVjdGlvbiBUQgogICAgICAgIFJBR1siUkFHIENvbnRleHQmbHQ7YnIvJmd0OyZsdDtpJmd0O0luLU1lbW9yeSBSZXRyaWV2YWwmbHQ7L2kmZ3Q7Il0KICAgICAgICBDaGF0WyJMTE0gUmVzcG9uc2UmbHQ7YnIvJmd0OyZsdDtpJmd0O1N0cmVhbWluZyBTU0UmbHQ7L2kmZ3Q7Il0KICAgIGVuZAoKICAgIHN1YmdyYXBoIFBoYXNlN1siNy4gUmVhbC10aW1lIERlbGl2ZXJ5Il0KICAgICAgICBkaXJlY3Rpb24gVEIKICAgICAgICBXU1siV2ViU29ja2V0IFN0cmVhbSZsdDtici8mZ3Q7Jmx0O2kmZ3Q7Sm9iIENhcmRzJmx0Oy9pJmd0OyJdCiAgICAgICAgVUlbIk5leHQuanMgRnJvbnRlbmQmbHQ7YnIvJmd0OyZsdDtpJmd0O1N3aXBlIEludGVyZmFjZSZsdDsvaSZndDsiXQogICAgZW5kCgogICAgJSUgRmxvdyBDb25uZWN0aW9ucwogICAgSm9icyAtLT4gQ2xlYW4KICAgIFJlc3VtZSAtLT4gT0NSCiAgICBPQ1IgLS0-IENsZWFuCiAgICBDbGVhbiAtLT4gTExNCiAgICBMTE0gLS0-IEVudGl0eQogICAgTExNIC0tPiBFbWJlZAogICAgRW50aXR5IC0tPiBEQgogICAgRW1iZWQgLS0-IFZEQgogICAgVkRCIC0tPiBSZXRyaWV2ZXIKICAgIERCIC0tPiBSZXRyaWV2ZXIKICAgIFJldHJpZXZlciAtLT4gUmFua2VyCiAgICBSYW5rZXIgLS0-IFJBRwogICAgUkFHIC0tPiBDaGF0CiAgICBSYW5rZXIgLS0-IFdTCiAgICBDaGF0IC0tPiBVSQogICAgV1MgLS0-IFVJ)
+
+**Pipeline Stages Explained:**
+
+| Stage | Component | Technical Description |
+|-------|-----------|----------------------|
+| **1. Data Acquisition** | JobSpy Scraper | Multi-source job aggregation using web scraping from LinkedIn, Indeed, Glassdoor |
+| **2. Document Processing** | Tesseract OCR + Poppler | PDF rendering via Poppler, text extraction via Tesseract OCR engine |
+| **3. NLP & Embeddings** | Parser Agent + Embedder | Gemini 3 Flash Preview for entity extraction, text-embedding-004 for semantic vectors |
+| **4. Storage & Indexing** | Firestore + Vector Store | NoSQL persistence with approximate nearest neighbor (ANN) indexing |
+| **5. Retrieval & Ranking** | Semantic Retriever + Ranker | Pure cosine similarity scoring between resume and job embeddings |
+| **6. RAG & Response** | RAG Engine + LLM | In-memory context retrieval with streaming SSE responses |
+| **7. Real-time Delivery** | WebSocket Stream | Bidirectional WSS for instant job card updates |
+
+---
+
+## Core Pipeline Details
 
 ### 1. Resume Parsing & Information Extraction
 
-The system employs a multi-stage parsing pipeline to extract structured data from unstructured resume documents:
+Multi-stage parsing pipeline to extract structured data from unstructured resume documents:
 
-- **Document Ingestion**: Supports PDF and DOCX formats via PyMuPDF and python-docx
-- **LLM-Powered Extraction**: Uses Google Gemini to extract:
-  - Personal information (name, email, contact)
-  - Educational background with institutions and degrees
-  - Technical skills categorized by proficiency
-  - Work experience with responsibilities and achievements
-  - Project descriptions with technologies used
-- **Schema Validation**: Outputs structured JSON conforming to defined schemas
+- **Document Ingestion**: PDF/DOCX support via Poppler and python-docx
+- **OCR Processing**: Tesseract for scanned document text extraction
+- **LLM-Powered Extraction**: Gemini 3 Flash Preview extracts entities (name, skills, education, experience)
+- **Schema Validation**: Structured JSON output conforming to defined schemas
 
 ### 2. Semantic Embedding Generation
 
-Converts textual content into dense vector representations for similarity computation:
+Dense vector representations for similarity computation:
 
-- **Embedding Model**: Google's `text-embedding-004` model
-- **Dual Encoding**: Generates embeddings for both resumes and job descriptions
-- **Vector Dimensions**: 768-dimensional dense vectors
-- **Batch Processing**: Efficient batch embedding for job corpus
+- **Embedding Model**: Google's `text-embedding-004`
+- **Dual Encoding**: Separate embeddings for resumes and job descriptions
+- **Batch Processing**: Efficient corpus embedding for 3000+ jobs
 
 ### 3. Recommendation & Ranking Engine
 
-Implements a hybrid ranking system combining semantic similarity with heuristic scoring:
-
-```
-Final Score = α × Semantic_Similarity + β × Skill_Match + γ × Experience_Fit
-```
+Pure semantic similarity ranking using cosine similarity:
 
 - **Semantic Similarity**: Cosine similarity between resume and job embeddings
-- **Skill Matching**: Weighted overlap between candidate skills and job requirements
-- **Experience Alignment**: Years of experience vs. job seniority requirements
-- **Real-time Ranking**: Jobs ranked and streamed via WebSocket for instant updates
+- **Real-time Ranking**: Jobs ranked and streamed via WebSocket in descending order
 
 ### 4. Conversational RAG (Retrieval-Augmented Generation)
 
 Context-aware conversational AI for job-specific queries:
 
-- **Context Injection**: Injects user's resume and current job posting into prompts
+- **Context Injection**: User resume + job posting injected into prompts
 - **Streaming Responses**: Real-time token streaming via Server-Sent Events (SSE)
-- **Use Cases**:
-  - Fit analysis ("Am I qualified for this role?")
-  - Interview preparation tips
-  - Cover letter generation assistance
-  - Skills gap identification
+- **Use Cases**: Fit analysis, interview prep, cover letter generation, skills gap identification
 
-## 🛠️ Tech Stack
+---
+
+## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
-| **Frontend** | Next.js 15, React, TypeScript, Tailwind CSS, Framer Motion |
-| **Backend** | Python 3.11+, FastAPI, Uvicorn |
-| **AI/ML** | Google Gemini (text-embedding-004, gemini-3-flash-preview) |
-| **Database** | Firebase Firestore |
-| **Auth** | Firebase Authentication |
-| **Real-time** | WebSocket (for job streaming) |
+| **Frontend** | Next.js 16, React, TypeScript, Tailwind CSS, Framer Motion |
+| **Backend** | Python 3.11+, FastAPI (ASGI), Modal Serverless |
+| **AI/ML** | Google Gemini 3 Flash Preview, text-embedding-004 |
+| **Database** | Firebase Firestore, Vector Store |
+| **Auth** | Firebase Authentication (JWT) |
+| **Real-time** | WebSocket (WSS), Server-Sent Events (SSE) |
+| **OCR** | Tesseract, Poppler |
+| **Deployment** | Vercel (Frontend), Modal (Backend) |
 
-## 🚀 Getting Started
+---
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/parse-resume` | POST | OCR + LLM parsing of resume documents |
+| `/save-profile` | GET | Fetch ranked job recommendations |
+| `/ws/jobs` | WS | Real-time streaming of ranked jobs |
+| `/match` | POST | Save job to user's matches |
+| `/matches` | GET | Retrieve saved matches |
+| `/match/{id}` | DELETE | Remove a saved match |
+| `/matches` | DELETE | Clear all matches |
+| `/chat` | POST | RAG-powered contextual chat |
+| `/health` | GET | Health check endpoint |
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
@@ -85,99 +122,86 @@ Context-aware conversational AI for job-specific queries:
 - Python 3.11+
 - Firebase project with Firestore enabled
 - Google AI API key (Gemini)
+- Tesseract OCR installed
+- Poppler installed
 
-### Backend Setup
+### Running Locally
+
+#### Backend Setup
 
 ```bash
 cd backend
+
+# Install dependencies
 pip install -r requirements.txt
 
 # Set environment variables
-export GEMINI_API_KEY="your-gemini-api-key"
-export GOOGLE_APPLICATION_CREDENTIALS="path/to/serviceAccountKey.json"
+set GEMINI_API_KEY=your-gemini-api-key
 
-# Run the server
+# Run the local server
 uvicorn server:app --reload --port 8000
 ```
 
-### Frontend Setup
+#### Frontend Setup
 
 ```bash
 cd frontend
+
+# Install dependencies
 npm install
 
-# Configure Firebase (create .env.local)
-NEXT_PUBLIC_FIREBASE_API_KEY=...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
+# Create .env.local file
+echo NEXT_PUBLIC_API_URL=http://localhost:8000 > .env.local
 
 # Run development server
 npm run dev
 ```
 
-## 📡 API Endpoints
+The app will be available at `http://localhost:3000`
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/upload-resume` | POST | Parse and store resume |
-| `/user` | GET | Fetch user profile |
-| `/ws/jobs` | WS | Stream ranked job recommendations |
-| `/match` | POST | Save job to matches |
-| `/matches` | GET | Retrieve saved matches |
-| `/chat` | POST | RAG-powered chat about jobs |
+---
 
-## 🔐 Authentication Flow
+## Production Deployment
 
-1. User signs in via Firebase (Email/Password or Google OAuth)
-2. Frontend obtains Firebase ID token
-3. Token sent in `Authorization: Bearer <token>` header
-4. Backend verifies token via Firebase Admin SDK
-5. User UID extracted for database operations
+### Backend (Modal)
 
-## 📊 Data Models
+```bash
+cd backend
 
-### User Profile
-```json
-{
-  "uid": "firebase-user-id",
-  "info_dict": {
-    "full_name": "string",
-    "email": "string",
-    "education": [{ "institution": "string", "degree": "string" }]
-  },
-  "job_dict": {
-    "technical_skills": ["string"],
-    "experience_summary": "string",
-    "projects": [{ "title": "string", "technologies": ["string"] }]
-  },
-  "embedding": [0.123, ...] // 768-dim vector
-}
+# Create volume for credentials
+modal volume create tfj-data
+modal volume put tfj-data firebase-credentials.json /firebase-credentials.json
+modal volume put tfj-data system_prompt.txt /system_prompt.txt
+
+# Create secret for API key
+modal secret create gemini-secret GEMINI_API_KEY=your_key
+
+# Deploy to Modal
+modal deploy modal_server.py
 ```
 
-### Job Listing
-```json
-{
-  "id": "job-id",
-  "title": "string",
-  "company_name": "string",
-  "location": "string",
-  "description": "string",
-  "extensions": ["Full-time", "Remote"],
-  "apply_options": [{ "title": "string", "link": "url" }],
-  "embedding": [0.456, ...] // 768-dim vector
-}
+### Frontend (Vercel)
+
+```bash
+cd frontend
+vercel --prod -e NEXT_PUBLIC_API_URL=https://your-modal-url.modal.run
 ```
 
-## 🎯 Features
+---
 
-- ✅ Resume parsing with LLM extraction
-- ✅ Semantic job matching with embeddings
+## Features
+
+- ✅ Resume parsing with OCR + LLM extraction
+- ✅ Semantic job matching with vector embeddings
 - ✅ Real-time job recommendations via WebSocket
-- ✅ Swipe-based discovery interface
+- ✅ Swipe-based discovery interface (Tinder-style UX)
 - ✅ RAG-powered job-specific chatbot
 - ✅ Match persistence and management
-- ✅ Responsive, animated UI
+- ✅ Responsive, animated UI with Framer Motion
+- ✅ Serverless deployment on Modal + Vercel
 
-## 📄 License
+---
+
+## License
 
 MIT License - See LICENSE file for details.
