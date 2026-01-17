@@ -47,18 +47,11 @@ const Velocity = () => {
               We analyze your skills, experience, and preferences to surface opportunities
               that are genuinely right for you.
             </p>
-            <p className="text-muted-foreground mb-8">
+            <p className="text-muted-foreground">
               No more endless scrolling through irrelevant listings. SwipeHire learns what
               you want and delivers curated job cards that match your career goals.
               It's job hunting, reimagined.
             </p>
-            <Button
-              size="lg"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 glow-effect-hover transition-all duration-300 group"
-            >
-              Get Started
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
           </div>
         </div>
       </div>

@@ -38,6 +38,7 @@ const Features = () => {
 
   return (
     <motion.section
+      id="features"
       ref={containerRef}
       style={{ y }}
       className="relative z-10 w-full  bg-background"

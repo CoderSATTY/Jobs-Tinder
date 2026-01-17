@@ -119,37 +119,18 @@ export function JobCard({ job, exitDirection, onSwipe, onViewDetails }: JobCardP
           </div>
         </div>
 
-        {/* Description Preview */}
+        {/* Description Preview - Increased for mobile */}
         <div
-          className="text-muted-foreground text-base line-clamp-3 mb-5"
+          className="text-muted-foreground text-base line-clamp-6 mb-4"
           dangerouslySetInnerHTML={{
-            __html: (descriptionText || "").replace(/<[^>]*>/g, '').substring(0, 180) + '...'
+            __html: (descriptionText || "").replace(/<[^>]*>/g, '').substring(0, 350) + '...'
           }}
         />
 
         {/* Footer Hint */}
-        <div className="flex items-center justify-center gap-2 text-xs text-primary mb-6">
+        <div className="flex items-center justify-center gap-2 text-xs text-primary">
           <ExternalLink className="w-3 h-3" />
-          <span>Tap for details • Swipe right to save</span>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-4">
-          <button
-            className="flex items-center justify-center gap-2 h-12 rounded-xl border-2 border-slate-700 text-slate-400 hover:border-red-500 hover:text-red-500 hover:bg-red-500/10 transition-colors font-medium"
-            onClick={(e) => { e.stopPropagation(); onSwipe("left"); }}
-          >
-            <X className="w-5 h-5" />
-            Pass
-          </button>
-
-          <button
-            className="flex items-center justify-center gap-2 h-12 rounded-xl border-2 border-slate-700 text-slate-400 hover:border-emerald-500 hover:text-emerald-500 hover:bg-emerald-500/10 transition-colors font-medium"
-            onClick={(e) => { e.stopPropagation(); onSwipe("right"); }}
-          >
-            <Check className="w-5 h-5" />
-            Save
-          </button>
+          <span>Tap for details • Swipe to save or pass</span>
         </div>
       </div>
     </motion.div>

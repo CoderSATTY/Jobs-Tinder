@@ -16,7 +16,7 @@ type WSMessage =
   | { type: "JOB"; job: DatabaseJob }
   | { type: "END" };
 
-const BACKEND_URL = "http://localhost:8000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function DiscoveryPage() {
   const router = useRouter();
@@ -70,7 +70,8 @@ export default function DiscoveryPage() {
       const token = await getIdToken();
       if (!token) return;
 
-      ws = new WebSocket(`${BACKEND_URL.replace("http", "ws")}/ws/jobs?token=${token}`);
+      const wsUrl = BACKEND_URL.replace(/^https?/, (m) => m === "https" ? "wss" : "ws");
+      ws = new WebSocket(`${wsUrl}/ws/jobs?token=${token}`);
       socketRef.current = ws;
 
       ws.onmessage = (event) => {
@@ -180,29 +181,58 @@ export default function DiscoveryPage() {
     setIsModalOpen(true);
   }, [currentJob]);
 
-  // Modal actions - close modal and return to mobile layout
-  const handleModalSave = useCallback(() => {
+  // Modal actions - Save the job and move to next
+  const handleModalSave = useCallback(async () => {
+    if (!selectedJob) {
+      setIsModalOpen(false);
+      setSelectedJob(null);
+      return;
+    }
+
+    // Save match
+    try {
+      const token = await getIdToken();
+      await fetch(`${BACKEND_URL}/match`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          job_id: selectedJob.id,
+          score: selectedJob.score || 0
+        }),
+      });
+      console.log("Match saved from modal!");
+    } catch (err) {
+      console.error("Failed to save match:", err);
+    }
+
     setIsModalOpen(false);
     setSelectedJob(null);
-    // Job was already saved during swipe, just close
-  }, []);
+    // Move to next job
+    setJobs((prev) => prev.slice(1));
+    requestNextJob();
+  }, [selectedJob, getIdToken]);
 
   const handleModalPass = useCallback(() => {
     setIsModalOpen(false);
     setSelectedJob(null);
-    // Just close, don't do anything else
+    // Move to next job (pass)
+    setJobs((prev) => prev.slice(1));
+    requestNextJob();
   }, []);
 
   // Loading state
   if (loading) {
     return (
-      <div className="h-[calc(100vh-4rem)]  flex items-center justify-center">
+      <div className="h-[calc(100vh-4rem)] bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="relative w-20 h-20 mx-auto">
-            <div className="absolute inset-0 border-4 border-indigo-300/30 rounded-full animate-ping"></div>
-            <div className="absolute inset-0 border-4 border-indigo-400 rounded-full border-t-transparent animate-spin"></div>
+            <div className="absolute inset-0 border-4 border-primary/30 rounded-full animate-ping"></div>
+            <div className="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin"></div>
           </div>
-          <p className="text-white/70 font-medium animate-pulse">Loading your matches...</p>
+          <p className="text-muted-foreground font-medium animate-pulse">Loading your matches...</p>
         </div>
       </div>
     );
@@ -211,16 +241,16 @@ export default function DiscoveryPage() {
   // No jobs state
   if (jobs.length === 0) {
     return (
-      <div className="h-[calc(100vh-4rem)]  flex items-center justify-center">
+      <div className="h-[calc(100vh-4rem)] bg-background flex items-center justify-center">
         <div className="text-center max-w-md px-4">
-          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-indigo-500/20 flex items-center justify-center border border-indigo-400/30">
-            <Briefcase className="w-12 h-12 text-indigo-400" />
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+            <Briefcase className="w-12 h-12 text-primary" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-3">No Jobs Yet</h2>
-          <p className="text-white/60 mb-6">
+          <h2 className="text-2xl font-bold text-foreground mb-3">No Jobs Yet</h2>
+          <p className="text-muted-foreground mb-6">
             Upload your resume to get personalized job recommendations.
           </p>
-          <Button onClick={() => router.push("/profile")} className="bg-indigo-600 hover:bg-indigo-700">
+          <Button onClick={() => router.push("/profile")} className="bg-primary hover:bg-primary/90">
             Upload Resume
           </Button>
         </div>
@@ -230,7 +260,7 @@ export default function DiscoveryPage() {
 
   return (
     <ProtectedRoute>
-      <div className="h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 overflow-hidden">
+      <div className="h-[calc(100vh-4rem)] bg-background overflow-hidden">
         <div className="h-full flex gap-2">
 
           {/* Left - Phone Mockup (30% width, edge-to-edge) */}
@@ -273,7 +303,7 @@ export default function DiscoveryPage() {
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       onClick={handleViewDetails}
-                      className="w-9 h-9 rounded-full bg-indigo-500/20 border-2 border-indigo-400 flex items-center justify-center text-indigo-400 hover:bg-indigo-500/30 transition-colors"
+                      className="w-9 h-9 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-primary hover:bg-primary/30 transition-colors"
                     >
                       <ChevronUp className="w-4 h-4" />
                     </motion.button>

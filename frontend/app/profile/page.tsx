@@ -61,7 +61,7 @@ function ProfilePageContent() {
             <div className="flex justify-center py-8">
               <button
                 onClick={handleUploadNew}
-                className="px-6 py-3 bg-white border border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 hover:shadow-md transition-all text-sm"
+                className="px-6 py-3 bg-secondary border border-border text-foreground font-medium rounded-xl hover:bg-secondary/80 hover:shadow-md transition-all text-sm"
               >
                 Upload New Resume
               </button>

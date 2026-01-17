@@ -56,21 +56,21 @@ export default function ParsedProfileView({ parsed }: Props) {
     : [];
 
   return (
-    <section className="mb-8 rounded-3xl border-none bg-white p-0 animate-in fade-in duration-500">
+    <section className="mb-8 rounded-3xl border-none bg-transparent p-0 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between border-b border-blue-50 pb-4">
+      <div className="mb-6 flex items-center justify-between border-b border-border pb-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-50 rounded-xl">
-            <User className="w-6 h-6 text-blue-600" />
+          <div className="p-2 bg-secondary rounded-xl">
+            <User className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-gray-900">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">
               Your Profile
             </h2>
-            <p className="text-gray-500 text-sm">Manage your details</p>
+            <p className="text-muted-foreground text-sm">Manage your details</p>
           </div>
         </div>
-        <span className="hidden sm:inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 border border-blue-100">
+        <span className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary border border-primary/20">
           <Sparkles className="w-3 h-3" />
           Ready to Match
         </span>
@@ -116,22 +116,14 @@ export default function ParsedProfileView({ parsed }: Props) {
                 techStack.map((t: any, i: number) => (
                   <span
                     key={i}
-                    className="rounded-lg border border-blue-100 bg-blue-50/50 px-3 py-1 text-sm font-medium text-blue-700 shadow-sm"
+                    className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-medium text-primary shadow-sm"
                   >
                     {renderValue(t)}
                   </span>
                 ))
               ) : (
-                <span className="text-gray-400 text-sm">—</span>
+                <span className="text-muted-foreground text-sm">—</span>
               )}
-            </div>
-          </Card>
-
-          {/* Links */}
-          <Card title="Links" icon={<LinkIcon className="w-4 h-4" />}>
-            <div className="flex flex-col gap-3">
-              <LinkRow label="GitHub" href={job.github || info.github || info.GitHub || job.GitHub} />
-              <LinkRow label="LinkedIn" href={job.linkedin || info.linkedin || info.LinkedIn || job.LinkedIn} />
             </div>
           </Card>
         </div>
@@ -165,12 +157,12 @@ function InfoRow({
   if (!value) return null; // Hide empty fields
 
   return (
-    <div className={`group flex items-center justify-between gap-3 p-1.5 rounded-lg transition-colors ${isDynamic ? 'bg-blue-50/50 border border-blue-100' : 'hover:bg-blue-50/30'}`}>
+    <div className={`group flex items-center justify-between gap-3 p-1.5 rounded-lg transition-colors ${isDynamic ? 'bg-primary/10 border border-primary/20' : 'hover:bg-secondary/50'}`}>
       <div className="flex items-center gap-2">
-        {icon && <span className="text-gray-400 group-hover:text-blue-500 transition-colors">{icon}</span>}
-        <span className="text-gray-500 font-medium text-xs uppercase tracking-wide">{label}</span>
+        {icon && <span className="text-muted-foreground group-hover:text-primary transition-colors">{icon}</span>}
+        <span className="text-muted-foreground font-medium text-xs uppercase tracking-wide">{label}</span>
       </div>
-      <span className={`font-semibold text-gray-900 text-right max-w-[60%] break-words ${large ? 'text-base' : 'text-sm'}`}>
+      <span className={`font-semibold text-foreground text-right max-w-[60%] break-words ${large ? 'text-base' : 'text-sm'}`}>
         {renderValue(value)}
       </span>
     </div>
@@ -188,7 +180,7 @@ function LinkRow({ label, href }: { label: string; href?: any }) {
       href={safeHref}
       target="_blank"
       rel="noreferrer"
-      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-blue-100 text-blue-600 hover:text-blue-700 hover:border-blue-200 hover:bg-blue-50/50 transition-all font-medium text-sm"
+      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary border border-border text-primary hover:text-primary/80 hover:border-primary/30 hover:bg-secondary/80 transition-all font-medium text-sm"
     >
       <LinkIcon className="w-3 h-3" />
       {label}
@@ -208,8 +200,8 @@ function Section({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 mb-2">
-        {icon && <div className="p-2 bg-white rounded-lg border border-blue-100 shadow-sm text-blue-600">{icon}</div>}
-        <h3 className="text-xl font-bold text-gray-800">
+        {icon && <div className="p-2 bg-secondary rounded-lg border border-border shadow-sm text-primary">{icon}</div>}
+        <h3 className="text-xl font-bold text-foreground">
           {title}
         </h3>
       </div>
@@ -228,11 +220,11 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm hover:shadow-md transition-shadow">
       {title && (
-        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-blue-50">
-          {icon && <div className="text-blue-500">{icon}</div>}
-          <h3 className="text-sm font-bold uppercase tracking-wide text-gray-700">
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
+          {icon && <div className="text-primary">{icon}</div>}
+          <h3 className="text-sm font-bold uppercase tracking-wide text-foreground">
             {title}
           </h3>
         </div>

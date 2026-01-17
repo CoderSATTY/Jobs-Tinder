@@ -24,7 +24,7 @@ interface MatchedJob {
   score?: number;
 }
 
-const BACKEND_URL = "http://localhost:8000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function MatchesPage() {
   const { getIdToken } = useAuth();
@@ -64,16 +64,32 @@ export default function MatchesPage() {
   }, [getIdToken]);
 
   const handleRemoveMatch = async (jobId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent modal from opening
-    // Remove from local state immediately
+    e.stopPropagation();
     setMatches((prev) => prev.filter((job) => job.id !== jobId));
 
-    // TODO: Add API endpoint to delete match from Firebase if needed
+    try {
+      const token = await getIdToken();
+      await fetch(`${BACKEND_URL}/match/${jobId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (error) {
+      console.error("Failed to delete match:", error);
+    }
   };
 
-  const handleClearAll = () => {
+  const handleClearAll = async () => {
     setMatches([]);
-    // TODO: Add API endpoint to clear all matches from Firebase if needed
+
+    try {
+      const token = await getIdToken();
+      await fetch(`${BACKEND_URL}/matches`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (error) {
+      console.error("Failed to clear all matches:", error);
+    }
   };
 
   const handleJobClick = (job: MatchedJob) => {
@@ -89,12 +105,12 @@ export default function MatchesPage() {
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center">
+        <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-center space-y-4">
             <div className="relative w-16 h-16 mx-auto">
-              <div className="absolute inset-0 border-4 border-indigo-400 rounded-full border-t-transparent animate-spin"></div>
+              <div className="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin"></div>
             </div>
-            <p className="text-white/70 font-medium">Loading your matches...</p>
+            <p className="text-muted-foreground font-medium">Loading your matches...</p>
           </div>
         </div>
       </ProtectedRoute>
@@ -108,8 +124,8 @@ export default function MatchesPage() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-white">Your Matches</h1>
-              <p className="text-white/60 mt-1">
+              <h1 className="text-3xl font-bold text-foreground">Your Matches</h1>
+              <p className="text-muted-foreground mt-1">
                 Jobs you're interested in applying to
               </p>
             </div>
@@ -137,21 +153,21 @@ export default function MatchesPage() {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ delay: index * 0.05 }}
                     onClick={() => handleJobClick(job)}
-                    className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-6 border border-slate-700 hover:border-indigo-500/50 transition-colors group cursor-pointer"
+                    className="bg-card backdrop-blur-sm rounded-2xl p-6 border border-border hover:border-primary/50 transition-colors group cursor-pointer"
                   >
                     {/* Header */}
                     <div className="flex items-start gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center shrink-0">
-                        <Building2 className="w-6 h-6 text-indigo-400" />
+                      <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
+                        <Building2 className="w-6 h-6 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-white truncate">{job.title}</h3>
-                        <p className="text-sm text-white/60">{job.company_name}</p>
+                        <h3 className="font-semibold text-foreground truncate">{job.title}</h3>
+                        <p className="text-sm text-muted-foreground">{job.company_name}</p>
                       </div>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-white/40 hover:text-red-400 hover:bg-red-500/20"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-red-400 hover:bg-red-500/20"
                         onClick={(e) => handleRemoveMatch(job.id, e)}
                       >
                         <X className="w-4 h-4" />
@@ -161,25 +177,25 @@ export default function MatchesPage() {
                     {/* Tags */}
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       {(job.extensions || job.job_highlights || []).slice(0, 3).map((tag, i) => (
-                        <Badge key={i} variant="outline" className="bg-indigo-500/10 text-indigo-300 border-indigo-500/30 text-xs">
+                        <Badge key={i} variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs">
                           {tag}
                         </Badge>
                       ))}
                     </div>
 
                     {/* Location */}
-                    <div className="flex items-center gap-2 text-sm text-white/50 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                       <MapPin className="w-3.5 h-3.5" />
                       <span>{job.location || "Location not specified"}</span>
                     </div>
 
                     {/* Description Preview */}
-                    <p className="text-sm text-white/40 line-clamp-2 mb-4">
+                    <p className="text-sm text-muted-foreground/70 line-clamp-2 mb-4">
                       {(job.description || "").replace(/<[^>]*>/g, '').substring(0, 100)}...
                     </p>
 
                     {/* View Details Button */}
-                    <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+                    <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                       <ExternalLink className="w-4 h-4 mr-2" />
                       View Details
                     </Button>
@@ -189,14 +205,14 @@ export default function MatchesPage() {
             </div>
           ) : (
             <div className="text-center py-16">
-              <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
-                <Briefcase className="w-12 h-12 text-slate-500" />
+              <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-card flex items-center justify-center border border-border">
+                <Briefcase className="w-12 h-12 text-muted-foreground" />
               </div>
-              <h2 className="text-2xl font-semibold text-white mb-2">No matches yet</h2>
-              <p className="text-white/50 mb-6">
+              <h2 className="text-2xl font-semibold text-foreground mb-2">No matches yet</h2>
+              <p className="text-muted-foreground mb-6">
                 Start swiping right on jobs you're interested in!
               </p>
-              <Button asChild className="bg-indigo-600 hover:bg-indigo-700">
+              <Button asChild className="bg-primary hover:bg-primary/90">
                 <Link href="/discovery">Discover Jobs</Link>
               </Button>
             </div>

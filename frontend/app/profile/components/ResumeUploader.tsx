@@ -44,14 +44,14 @@ export default function ResumeUploader({ onUploadComplete }: Props) {
 
         <div className="flex flex-col sm:flex-row gap-4">
           <label className="flex-1 cursor-pointer">
-            <div className="flex items-center justify-between px-4 py-3 border border-dashed border-slate-300 rounded-lg hover:border-indigo-400 transition">
+            <div className="flex items-center justify-between px-4 py-3 border border-dashed border-border rounded-lg hover:border-primary transition">
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-slate-700">
                   {file ? file.name : "Choose a resume file"}
                 </span>
                 <span className="text-xs text-slate-400">PDF or DOCX</span>
               </div>
-              <span className="text-sm text-indigo-600 font-medium">Browse</span>
+              <span className="text-sm text-primary font-medium">Browse</span>
             </div>
             <input
               type="file"
@@ -64,8 +64,8 @@ export default function ResumeUploader({ onUploadComplete }: Props) {
           <button
             onClick={upload}
             disabled={!file || loading}
-            className="h-[52px] px-6 rounded-lg font-medium text-white bg-indigo-600
-                       hover:bg-indigo-700 transition
+            className="h-[52px] px-6 rounded-lg font-medium text-primary-foreground bg-primary
+                       hover:bg-primary/90 transition
                        disabled:opacity-40 disabled:cursor-not-allowed
                        flex items-center justify-center"
           >
