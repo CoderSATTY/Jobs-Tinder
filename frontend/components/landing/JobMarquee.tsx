@@ -1,4 +1,4 @@
-"use client";
+// "use client";
 
 import { motion } from "framer-motion";
 import { SiGoogle, SiGoldmansachs, SiApple, SiNetflix, SiAmazon, SiMeta, SiDatabricks, SiOpenai, SiAirbnb, SiUber, SiSpotify, SiStripe, SiCoinbase, SiSlack, SiZoom, SiAnthropic, SiTata, SiWalmart } from "react-icons/si";
@@ -28,7 +28,7 @@ const COMPANIES = [
 
 export function JobMarquee() {
     return (
-        <div className="relative w-full overflow-hidden py-10 fade-mask bg-background/50 backdrop-blur-sm">
+        <div className="relative w-full overflow-visible py-10 fade-mask bg-background/50 backdrop-blur-sm">
             <div className="flex w-full">
                 <motion.div
                     className="flex gap-12 sm:gap-16 md:gap-24 whitespace-nowrap items-center w-max"

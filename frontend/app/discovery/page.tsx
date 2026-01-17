@@ -196,7 +196,7 @@ export default function DiscoveryPage() {
   // Loading state
   if (loading) {
     return (
-      <div className="h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center">
+      <div className="h-[calc(100vh-4rem)]  flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="relative w-20 h-20 mx-auto">
             <div className="absolute inset-0 border-4 border-indigo-300/30 rounded-full animate-ping"></div>
@@ -211,7 +211,7 @@ export default function DiscoveryPage() {
   // No jobs state
   if (jobs.length === 0) {
     return (
-      <div className="h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center">
+      <div className="h-[calc(100vh-4rem)]  flex items-center justify-center">
         <div className="text-center max-w-md px-4">
           <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-indigo-500/20 flex items-center justify-center border border-indigo-400/30">
             <Briefcase className="w-12 h-12 text-indigo-400" />
