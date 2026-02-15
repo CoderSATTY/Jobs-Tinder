@@ -201,6 +201,8 @@ vercel --prod -e NEXT_PUBLIC_API_URL=https://your-modal-url.modal.run
 - ✅ Serverless deployment on Modal + Vercel
 
 ---
+## Deployed Link
+https://swipehire-lime.vercel.app/
 
 ## License
 
