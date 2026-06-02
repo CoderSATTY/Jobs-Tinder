@@ -1,4 +1,10 @@
 import os
+import sys
+import asyncio
+
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 import json
 from pydoc import doc
 import tempfile
@@ -24,12 +30,12 @@ load_dotenv()
 
 # Tesseract and Poppler paths
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-POPPLER_PATH = r"D:\Release-25.12.0-0\poppler-25.12.0\Library\bin"
+POPPLER_PATH = r"C:\tools\poppler-26.02.0\Library\bin"
 SYSTEM_PROMPT_PATH = os.path.join(os.path.dirname(__file__),  "system_prompt.txt")
 
 app = FastAPI(title="Resume Parser & Job Recommendation API")
 
-cred_path = os.path.join(os.path.dirname(__file__), "job-swipe-1a26b-firebase-adminsdk-fbsvc-1e4a97ee2b.json")
+cred_path = os.path.join(os.path.dirname(__file__), "firebase.json")
 cred = credentials.Certificate(cred_path)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
@@ -351,6 +357,209 @@ async def jobs_ws(ws: WebSocket):
     except WebSocketDisconnect:
         print("Client disconnected")
 
+
+@app.websocket("/ws/apply")
+async def apply_ws(ws: WebSocket):
+    await ws.accept()
+    
+    match_ref = None
+    job_id = None
+    process = None
+    
+    try:
+        # Get query parameters
+        token = ws.query_params.get("token")
+        job_id = ws.query_params.get("job_id")
+        
+        if not token or not job_id:
+            await ws.send_json({"type": "error", "message": "Missing token or job_id"})
+            await ws.close(code=1008)
+            return
+            
+        # 1. Authenticate user
+        try:
+            decoded = auth.verify_id_token(token)
+            uid = decoded["uid"]
+        except Exception:
+            await ws.send_json({"type": "error", "message": "Invalid token"})
+            await ws.close(code=1008)
+            return
+            
+        await ws.send_json({"type": "status", "message": "Authenticated. Fetching job details..."})
+        
+        # 2. Fetch Job Details from Firestore
+        job_doc = db.collection("resumes").document(job_id).get()
+        if not job_doc.exists:
+            await ws.send_json({"type": "error", "message": "Job not found"})
+            await ws.close()
+            return
+            
+        job_data = job_doc.to_dict()
+        title = job_data.get("title", "Job")
+        company = job_data.get("company_name", "Company")
+        
+        # Find application link
+        apply_link = None
+        apply_options = job_data.get("apply_options", [])
+        if apply_options and isinstance(apply_options, list):
+            apply_link = apply_options[0].get("link")
+        if not apply_link:
+            apply_link = job_data.get("share_link")
+            
+        if not apply_link:
+            await ws.send_json({"type": "error", "message": "No application link found for this job"})
+            await ws.close()
+            return
+            
+        await ws.send_json({"type": "status", "message": f"Found application link: {apply_link}. Fetching user details..."})
+        
+        # 3. Update match status in Firestore to "applying"
+        match_ref = db.collection("users").document(uid).collection("matches").document(job_id)
+        match_ref.set({"status": "applying", "title": title, "company_name": company}, merge=True)
+        
+        # 4. Start the automation process as a separate OS process
+        import subprocess
+        import sys
+        
+        await ws.send_json({"type": "status", "message": "Launching browser automation process..."})
+        
+        python_exe = sys.executable
+        script_path = os.path.join(os.path.dirname(__file__), "run_agent.py")
+        
+        env = os.environ.copy()
+        
+        process = subprocess.Popen(
+            [python_exe, script_path, uid, job_id],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1, # Line buffered
+            env=env
+        )
+        
+        # Concurrently listen for client abort/close and read stdout of subprocess
+        loop = asyncio.get_running_loop()
+        ws_queue = asyncio.Queue()
+        
+        def read_stdout():
+            for line in iter(process.stdout.readline, ''):
+                line = line.strip()
+                if line:
+                    try:
+                        msg = json.loads(line)
+                        loop.call_soon_threadsafe(ws_queue.put_nowait, msg)
+                    except json.JSONDecodeError:
+                        loop.call_soon_threadsafe(ws_queue.put_nowait, {"type": "status", "message": line})
+            # Send sentinel when process stdout finishes
+            loop.call_soon_threadsafe(ws_queue.put_nowait, None)
+
+        def read_stderr():
+            for line in iter(process.stderr.readline, ''):
+                line = line.strip()
+                if line:
+                    print(f"[Agent Subprocess Error] {line}")
+                    loop.call_soon_threadsafe(ws_queue.put_nowait, {"type": "status", "message": f"[System Log] {line}"})
+                    
+        # Launch reader threads
+        import threading
+        t_stdout = threading.Thread(target=read_stdout, daemon=True)
+        t_stderr = threading.Thread(target=read_stderr, daemon=True)
+        t_stdout.start()
+        t_stderr.start()
+        
+        # Concurrently handle WebSocket client inputs (abort) and WebSocket writer
+        async def client_reader():
+            try:
+                while process.poll() is None:
+                    text_data = await ws.receive_text()
+                    data = json.loads(text_data)
+                    if data.get("type") == "abort":
+                        print("Received abort command. Terminating agent subprocess...")
+                        process.kill()
+                        if match_ref:
+                            match_ref.update({
+                                "status": "failed",
+                                "failure_reason": "Aborted by user"
+                            })
+                        break
+            except WebSocketDisconnect:
+                print("Client disconnected. Terminating agent subprocess...")
+                process.kill()
+            except Exception as e:
+                print(f"Error in client_reader: {e}")
+                process.kill()
+
+        async def client_writer():
+            try:
+                while True:
+                    msg = await ws_queue.get()
+                    if msg is None:
+                        break
+                    
+                    await ws.send_json(msg)
+                    
+                    # Persist status in Firestore
+                    if msg.get("type") == "success":
+                        if match_ref:
+                            match_ref.update({
+                                "status": "applied",
+                                "applied_at": firestore.SERVER_TIMESTAMP,
+                                "application_result": msg.get("result")
+                            })
+                    elif msg.get("type") == "error":
+                        if match_ref:
+                            match_ref.update({
+                                "status": "failed",
+                                "failure_reason": msg.get("message")
+                            })
+            except Exception as e:
+                print(f"Error in client_writer: {e}")
+                
+        await asyncio.gather(client_reader(), client_writer(), return_exceptions=True)
+        
+    except WebSocketDisconnect:
+        print(f"WS client disconnected during application process for job {job_id}")
+        if process:
+            process.kill()
+        try:
+            if match_ref:
+                doc = match_ref.get()
+                if doc.exists and doc.to_dict().get("status") == "applying":
+                    match_ref.update({"status": "saved"})
+        except Exception:
+            pass
+            
+    except Exception as e:
+        print(f"Error in apply_ws: {e}")
+        if process:
+            process.kill()
+        try:
+            await ws.send_json({"type": "error", "message": f"Application failed: {str(e)}"})
+            if match_ref:
+                match_ref.update({
+                    "status": "failed",
+                    "failure_reason": str(e)
+                })
+        except Exception:
+            pass
+    finally:
+        try:
+            await ws.close()
+        except Exception:
+            pass
+from fastapi.responses import FileResponse
+
+@app.get("/live-screenshot/{uid}")
+async def get_live_screenshot(uid: str):
+    """
+    Serve the live screenshot for the given user ID.
+    """
+    resumes_dir = os.path.join(os.path.dirname(__file__), "resumes")
+    screenshot_path = os.path.join(resumes_dir, f"{uid}_live.png")
+    if os.path.exists(screenshot_path):
+        return FileResponse(screenshot_path, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
+    raise HTTPException(status_code=404, detail="Live screenshot not found")
+
 @app.post("/parse-resume")
 async def parse_resume(file: UploadFile = File(...),user: dict = Depends(get_current_user)):
     """
@@ -380,6 +589,14 @@ async def parse_resume(file: UploadFile = File(...),user: dict = Depends(get_cur
         info_dict = parsed_data.get("info_dict", {})
         job_dict = parsed_data.get("job_dict", {})
         new_keys_tracker = parsed_data.get("new_keys_tracker", {})
+
+        # Save resume persistently for the auto-apply agent
+        import shutil
+        resumes_dir = os.path.join(os.path.dirname(__file__), "resumes")
+        os.makedirs(resumes_dir, exist_ok=True)
+        ext = os.path.splitext(file.filename)[1].lower()
+        persistent_pdf_path = os.path.join(resumes_dir, f"{user['uid']}{ext}")
+        shutil.copy(tmp_path, persistent_pdf_path)
 
         # FORCE OVERWRITE: Reset user data completely
         db.collection("users").document(user["uid"]).set(
