@@ -2,6 +2,7 @@ import json
 import os
 import numpy as np
 from google import genai
+from google.genai import types
 from sklearn.metrics.pairwise import cosine_similarity
 from dotenv import load_dotenv
 load_dotenv()
@@ -19,8 +20,9 @@ def rank_resumes():
     resume_text = json.dumps(resume_data, sort_keys=True)
     
     response = client.models.embed_content(
-        model="text-embedding-004",
-        contents=resume_text
+        model="gemini-embedding-2",
+        contents=resume_text,
+        config=types.EmbedContentConfig(output_dimensionality=768)
     )
     query_embedding = np.array(response.embeddings[0].values).reshape(1, -1)
 

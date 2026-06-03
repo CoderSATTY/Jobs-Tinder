@@ -13,6 +13,7 @@ import pytesseract
 from pdf2image import convert_from_path
 
 from google import genai
+from google.genai import types
 from sklearn.metrics.pairwise import cosine_similarity
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, UploadFile, File, HTTPException, WebSocket, WebSocketDisconnect
@@ -123,7 +124,7 @@ def parse_resume_with_llm(text_content: str) -> dict:
 
 
 def create_embedding(text: str) -> np.ndarray:
-    """Create embedding using Gemini text-embedding-004."""
+    """Create embedding using Gemini gemini-embedding-2 (768-dim)."""
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY not found in environment")
@@ -132,8 +133,9 @@ def create_embedding(text: str) -> np.ndarray:
     
     try:
         response = client.models.embed_content(
-            model="text-embedding-004",
-            contents=text
+            model="gemini-embedding-2",
+            contents=text,
+            config=types.EmbedContentConfig(output_dimensionality=768)
         )
         return np.array(response.embeddings[0].values).reshape(1, -1)
     except Exception as e:
